@@ -64,6 +64,17 @@ export default function App() {
   }, [editingCell])
 
   useEffect(() => {
+    function handleEscape(e) {
+      if (e.key !== 'Escape') return
+      setSelectedRange(null)
+      setAnchorRow(null)
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [])
+
+  useEffect(() => {
     const tableEl = tableRef.current
     if (!tableEl) return
     const head = tableEl.querySelector('thead')
