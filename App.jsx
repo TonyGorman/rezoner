@@ -443,9 +443,9 @@ export default function App() {
       {loadStats && (
         <div
           className={styles.statsFooter}
-          title={`${loadStats.loadedRowCount} rows loaded from ${loadStats.inputRowCount} rows in file. ${loadStats.alreadyPlacedErrorsRemoved} already placed paths removed. ${loadStats.primaryLocationFixes} Primary location fixes.`}
+          title={`${loadStats.loadedRowCount} rows loaded from ${loadStats.inputRowCount} rows in file. ${loadStats.alreadyPlacedErrorsRemoved} "already placed paths" removed. ${loadStats.primaryLocationFixes} Primary location fixes.`}
         >
-          {loadStats.loadedRowCount} rows loaded / {loadStats.inputRowCount} in file | {loadStats.alreadyPlacedErrorsRemoved} already placed paths removed | {loadStats.primaryLocationFixes} Primary location fixes
+          {loadStats.loadedRowCount} rows loaded / {loadStats.inputRowCount} in file | {loadStats.alreadyPlacedErrorsRemoved} "already placed paths" removed | {loadStats.primaryLocationFixes} Primary location fixes
         </div>
       )}
     </div>
