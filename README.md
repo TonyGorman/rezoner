@@ -13,7 +13,7 @@ CSV columns: `Zone;X;Y;Z;Path;PT;Name;Sorted;Role`
 - Highlight malformed rows instead of blocking edits or saves.
 - Remove duplicate input lines and report automatic Primary/Secondary role fixes.
 
-Click a row to select it; use Shift-click to select a range. Saved files retain the semicolon delimiter and omit blank rows.
+Click a row to select it; use Shift-click to select a range; press Escape to clear the selection. Saved files retain the semicolon delimiter and omit blank rows.
 
 ## Run
 
