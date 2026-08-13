@@ -19,6 +19,7 @@ export default function App() {
   const [searchPattern, setSearchPattern] = useState('')
   const [replaceWith, setReplaceWith] = useState('')
   const [searchError, setSearchError] = useState('')
+  const [loadStats, setLoadStats] = useState(null)
   const [editingCell, setEditingCell] = useState(null)
   const [editingValue, setEditingValue] = useState('')
   const [scrollTop, setScrollTop] = useState(0)
@@ -90,10 +91,11 @@ export default function App() {
     setFilename(file.name)
     const reader = new FileReader()
     reader.onload = ev => {
-      const { headers: h, rows: r } = parseCSV(ev.target.result)
+      const { headers: h, rows: r, stats } = parseCSV(ev.target.result)
       flushSync(() => {
         setHeaders(h)
         setRows(r)
+        setLoadStats(stats)
         setSelectedRange(null)
         setAnchorRow(null)
         setEditingCell(null)
@@ -277,82 +279,89 @@ export default function App() {
     <div className={styles.app}>
       <div className={styles.toolbar}>
 
-        <label className={styles.openBtn}>
-          Open CSV
-          <input type="file" accept=".csv,.txt" onChange={handleFileOpen} hidden />
-        </label>
-
-        {filename && <span className={styles.filename}>{filename}</span>}
-        {malformedCount > 0 && (
-          <span className={styles.warning}>
-            ⚠ {malformedCount} malformed row{malformedCount !== 1 ? 's' : ''}
-          </span>
-        )}
-
-        <span className={styles.sep} />
-
-        <label>Move after row</label>
-        <input
-          type="number"
-          min="0"
-          className={styles.numInput}
-          value={moveTarget}
-          placeholder="row #"
-          onChange={e => setMoveTarget(e.target.value)}
-          disabled={!hasSelection}
-        />
-        <button onClick={handleMove} disabled={!hasSelection || moveTarget === ''}>
-          Move
-        </button>
-
-        <button onClick={handleReverseY} disabled={!hasSelection}>
-          Reverse Y
-        </button>
-
-        <button onClick={handleAlphaZ} disabled={!rows.length}>
-          Alpha Z
-        </button>
+        <div className={styles.toolbarGroup}>
+          <label className={styles.openBtn}>
+            Open CSV
+            <input type="file" accept=".csv,.txt" onChange={handleFileOpen} hidden />
+          </label>
+          {filename && <span className={styles.filename}>{filename}</span>}
+          {malformedCount > 0 && (
+            <span className={styles.warning}>
+              ⚠ {malformedCount} malformed row{malformedCount !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
 
         <span className={styles.sep} />
 
-        <input
-          type="text"
-          className={styles.textInput}
-          placeholder="Find text"
-          value={findText}
-          onChange={e => { setFindText(e.target.value); setFindStatus('') }}
-        />
-        <button onClick={handleFindNext} disabled={!rows.length || !findText.trim()}>
-          Find Next
-        </button>
-        {findStatus && <span className={styles.filename}>{findStatus}</span>}
+        <div className={styles.toolbarGroup}>
+          <label>Move after row</label>
+          <input
+            type="number"
+            min="0"
+            className={styles.numInput}
+            value={moveTarget}
+            placeholder="row #"
+            onChange={e => setMoveTarget(e.target.value)}
+            disabled={!hasSelection}
+          />
+          <button onClick={handleMove} disabled={!hasSelection || moveTarget === ''}>
+            Move
+          </button>
+          <button onClick={handleReverseY} disabled={!hasSelection}>
+            Reverse Y
+          </button>
+          <button onClick={handleAlphaZ} disabled={!rows.length}>
+            Alpha Z
+          </button>
+        </div>
 
         <span className={styles.sep} />
 
-        <input
-          type="text"
-          className={styles.textInput}
-          placeholder="Search (regex)"
-          value={searchPattern}
-          onChange={e => { setSearchPattern(e.target.value); setSearchError('') }}
-        />
-        <input
-          type="text"
-          className={styles.textInput}
-          placeholder="Replace with"
-          value={replaceWith}
-          onChange={e => setReplaceWith(e.target.value)}
-        />
-        <button onClick={handleSearchReplace} disabled={!rows.length || !searchPattern}>
-          Replace All
-        </button>
-        {searchError && <span className={styles.warning}>{searchError}</span>}
+        <div className={styles.toolbarGroup}>
+          <input
+            type="text"
+            className={styles.textInput}
+            placeholder="Find text"
+            value={findText}
+            onChange={e => { setFindText(e.target.value); setFindStatus('') }}
+          />
+          <button onClick={handleFindNext} disabled={!rows.length || !findText.trim()}>
+            Find Next
+          </button>
+          {findStatus && <span className={styles.filename}>{findStatus}</span>}
+        </div>
 
         <span className={styles.sep} />
 
-        <button onClick={handleSave} disabled={!rows.length}>
-          Save CSV
-        </button>
+        <div className={styles.toolbarGroup}>
+          <input
+            type="text"
+            className={styles.textInput}
+            placeholder="Search (regex)"
+            value={searchPattern}
+            onChange={e => { setSearchPattern(e.target.value); setSearchError('') }}
+          />
+          <input
+            type="text"
+            className={styles.textInput}
+            placeholder="Replace with"
+            value={replaceWith}
+            onChange={e => setReplaceWith(e.target.value)}
+          />
+          <button onClick={handleSearchReplace} disabled={!rows.length || !searchPattern}>
+            Replace All
+          </button>
+          {searchError && <span className={styles.warning}>{searchError}</span>}
+        </div>
+
+        <span className={styles.sep} />
+
+        <div className={styles.toolbarGroup}>
+          <button onClick={handleSave} disabled={!rows.length}>
+            Save CSV
+          </button>
+        </div>
 
       </div>
 
@@ -430,6 +439,15 @@ export default function App() {
           <p className={styles.empty}>Open a CSV file to begin.</p>
         )}
       </div>
+
+      {loadStats && (
+        <div
+          className={styles.statsFooter}
+          title={`${loadStats.loadedRowCount} rows loaded from ${loadStats.inputRowCount} rows in file. ${loadStats.alreadyPlacedErrorsRemoved} already placed paths removed. ${loadStats.primaryLocationFixes} Primary location fixes.`}
+        >
+          {loadStats.loadedRowCount} rows loaded / {loadStats.inputRowCount} in file | {loadStats.alreadyPlacedErrorsRemoved} already placed paths removed | {loadStats.primaryLocationFixes} Primary location fixes
+        </div>
+      )}
     </div>
   )
 }

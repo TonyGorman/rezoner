@@ -15,6 +15,14 @@
   flex-shrink: 0;
 }
 
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
 /* Styled label acting as a file-open button */
 .openBtn {
   display: inline-block;
@@ -47,6 +55,10 @@
 .filename {
   color: #555;
   font-style: italic;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .warning {
@@ -57,6 +69,20 @@
 .tableWrapper {
   flex: 1;
   overflow: auto;
+}
+
+.statsFooter {
+  flex-shrink: 0;
+  min-width: 0;
+  padding: 3px 10px;
+  color: #666;
+  background: #f4f4f4;
+  border-top: 1px solid #ccc;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
 }
 
 /* Sticky header requires position on th */

@@ -1,24 +1,120 @@
 // Y field is at column index 2: Zone;X;Y;Z;Path;PT;Name;Sorted;Role
 const Y_INDEX = 2
 const Z_INDEX = 3
+const PATH_INDEX = 4
+const ROLE_INDEX = 8
+
+function yStartsWithEorF(yValue) {
+  return /^[EF]/i.test((yValue || '').trim())
+}
+
+function hasBlankPath(row) {
+  const fields = row.fields || []
+  return (fields[PATH_INDEX] || '').trim() === ''
+}
+
+function applyDuplicateRoleLabels(rows) {
+  const groups = new Map()
+
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i]
+    if (!row.fields || row.fields.length <= ROLE_INDEX) continue
+    if (hasBlankPath(row)) continue
+    if (row.fields[ROLE_INDEX].trim() !== 'Primary') continue
+    const key = [
+      row.fields[PATH_INDEX],
+    ].join('|')
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(i)
+  }
+
+  let nextRows = null
+  let primaryLocationFixes = 0
+
+  for (const indexes of groups.values()) {
+    if (indexes.length < 2) continue
+
+    let primaryIndex = indexes[0]
+    const firstY = rows[primaryIndex].fields[Y_INDEX]
+    if (yStartsWithEorF(firstY)) {
+      const preferred = indexes.find(idx => !yStartsWithEorF(rows[idx].fields[Y_INDEX]))
+      if (preferred !== undefined) primaryIndex = preferred
+    }
+
+    if (!nextRows) {
+      nextRows = rows.map(row => ({
+        ...row,
+        fields: [...row.fields],
+      }))
+    }
+
+    for (const idx of indexes) {
+      const nextRole = idx === primaryIndex ? 'Primary' : 'Secondary'
+      const previousRole = nextRows[idx].fields[ROLE_INDEX]
+      if (previousRole !== nextRole) {
+        console.log('[parseCSV] amended Role:', {
+          row: idx + 1,
+          path: nextRows[idx].fields[PATH_INDEX],
+          y: nextRows[idx].fields[Y_INDEX],
+          previousRole,
+          nextRole,
+        })
+      }
+      nextRows[idx].fields[ROLE_INDEX] = nextRole
+      if (previousRole !== nextRole) primaryLocationFixes += 1
+    }
+  }
+
+  return {
+    rows: nextRows || rows,
+    primaryLocationFixes,
+  }
+}
 
 export function parseCSV(text) {
   // Blank lines are the only rows removed; all others kept in original order
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== '')
-  if (lines.length === 0) return { headers: [], rows: [] }
+  if (lines.length === 0) {
+    return {
+      headers: [],
+      rows: [],
+      stats: {
+        inputRowCount: 0,
+        loadedRowCount: 0,
+        alreadyPlacedErrorsRemoved: 0,
+        primaryLocationFixes: 0,
+      },
+    }
+  }
   const headers = lines[0].split(';')
+  const dataLines = lines.slice(1)
+  const inputRowCount = dataLines.length
   const seen = new Set()
   const uniqueDataLines = []
-  for (const line of lines.slice(1)) {
-    if (seen.has(line)) continue
+  for (const line of dataLines) {
+    if (seen.has(line)) {
+      console.log('[parseCSV] deleted already placed error:', line)
+      continue
+    }
     seen.add(line)
     uniqueDataLines.push(line)
   }
+  const alreadyPlacedErrorsRemoved = inputRowCount - uniqueDataLines.length
   const rows = uniqueDataLines.map(line => {
     const fields = line.split(';')
     return { fields, malformed: fields.length !== headers.length }
   })
-  return { headers, rows }
+  const labeled = applyDuplicateRoleLabels(rows)
+  return {
+    headers,
+    rows: labeled.rows,
+    stats: {
+      inputRowCount,
+      loadedRowCount: labeled.rows.length,
+      alreadyPlacedErrorsRemoved,
+      primaryLocationFixes: labeled.primaryLocationFixes,
+    },
+  }
 }
 
 export function serializeCSV(headers, rows) {

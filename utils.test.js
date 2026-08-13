@@ -27,9 +27,15 @@ describe('parseCSV', () => {
   })
 
   it('returns empty result for empty input', () => {
-    const { headers, rows } = parseCSV('')
+    const { headers, rows, stats } = parseCSV('')
     expect(headers).toEqual([])
     expect(rows).toEqual([])
+    expect(stats).toEqual({
+      inputRowCount: 0,
+      loadedRowCount: 0,
+      alreadyPlacedErrorsRemoved: 0,
+      primaryLocationFixes: 0,
+    })
   })
 
   it('removes exact duplicate data lines during load', () => {
@@ -57,6 +63,105 @@ describe('parseCSV', () => {
     expect(rows).toHaveLength(3)
     expect(rows.map(r => r.fields[0])).toEqual(['Grocery', 'Chilled', 'Grocery'])
   })
+
+  it('demotes duplicate Primary rows for the same Path to one Primary', () => {
+    const text = [
+      HEADER,
+      'Grocery;01;A1;1;P100;PT100;Item;SORTED;Primary',
+      'Grocery;02;B1;2;P100;PT100;Item;SORTED;Primary',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows[0].fields[8]).toBe('Primary')
+    expect(rows[1].fields[8]).toBe('Secondary')
+  })
+
+  it('uses Path as the product ID regardless of other fields', () => {
+    const text = [
+      HEADER,
+      'Grocery;01;A1;1;P100;PT-1;Item-1;SORTED;Primary',
+      'Grocery;02;B1;2;P100;PT-2;Item-2;UNSORTED;Primary',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows[0].fields[8]).toBe('Primary')
+    expect(rows[1].fields[8]).toBe('Secondary')
+  })
+
+  it('leaves blank and Secondary roles unchanged', () => {
+    const text = [
+      HEADER,
+      'Grocery;01;A1;1;P100;PT-1;Item-1;SORTED;',
+      'Grocery;02;B1;2;P100;PT-2;Item-2;UNSORTED;Secondary',
+      'Grocery;03;C1;3;P100;PT-3;Item-3;SORTED;Primary',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows.map(row => row.fields[8])).toEqual(['', 'Secondary', 'Primary'])
+  })
+
+  it('chooses the first eligible Primary unless its Y starts with E or F', () => {
+    const text = [
+      HEADER,
+      'Grocery;01;E1;1;P200;PT200;Item;SORTED;Primary',
+      'Grocery;02;A1;2;P200;PT200;Item;SORTED;Primary',
+      'Grocery;03;F2;3;P200;PT200;Item;SORTED;Primary',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows[0].fields[8]).toBe('Secondary')
+    expect(rows[1].fields[8]).toBe('Primary')
+    expect(rows[2].fields[8]).toBe('Secondary')
+  })
+
+  it('keeps the first Primary when all duplicate Y values start with E/F', () => {
+    const text = [
+      HEADER,
+      'Grocery;01;E1;1;P300;PT300;Item;SORTED;Primary',
+      'Grocery;02;F2;2;P300;PT300;Item;SORTED;Primary',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows[0].fields[8]).toBe('Primary')
+    expect(rows[1].fields[8]).toBe('Secondary')
+  })
+
+  it('reports load stats for duplicates removed and Primary location fixes', () => {
+    const text = [
+      HEADER,
+      'Grocery;01;A1;1;P400;PT400;Item;SORTED;Primary',
+      'Grocery;01;A1;1;P400;PT400;Item;SORTED;Primary',
+      'Grocery;02;B1;2;P400;PT400;Item;SORTED;Primary',
+      'Frozen;03;C1;3;P401;PT401;Item2;SORTED;',
+    ].join('\n')
+    const { stats } = parseCSV(text)
+    expect(stats).toEqual({
+      inputRowCount: 4,
+      loadedRowCount: 3,
+      alreadyPlacedErrorsRemoved: 1,
+      primaryLocationFixes: 1,
+    })
+  })
+
+  it('preserves strict row ordering during load-time transforms', () => {
+    const text = [
+      HEADER,
+      'A;01;E1;1;P500;PT500;N1;SORTED;',
+      'B;02;A1;2;P500;PT500;N1;SORTED;',
+      'C;03;B1;3;P501;PT501;N2;SORTED;',
+      'B;02;A1;2;P500;PT500;N1;SORTED;',
+      'D;04;C1;4;P502;PT502;N3;SORTED;',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows.map(r => r.fields[0])).toEqual(['A', 'B', 'C', 'D'])
+  })
+
+  it('does not treat fully blank Path rows as duplicate groups', () => {
+    const text = [
+      HEADER,
+      'A;01;A1;1;;;;;',
+      'B;02;B1;2;;;;;',
+    ].join('\n')
+    const { rows, stats } = parseCSV(text)
+    expect(rows[0].fields[8]).toBe('')
+    expect(rows[1].fields[8]).toBe('')
+    expect(stats.primaryLocationFixes).toBe(0)
+  })
 })
 
 describe('serializeCSV', () => {
@@ -69,9 +174,9 @@ describe('serializeCSV', () => {
   it('preserves original row order through a parse-serialize round-trip', () => {
     const text = [
       HEADER,
-      'Grocery;36;R05;A;;;;SORTED;',
-      'Grocery;36;R04;A;;;;SORTED;',
-      'Chilled;12;L01;B;;;;SORTED;',
+      'Grocery;36;R05;A;PATH-1;PT-1;Name-1;SORTED;',
+      'Grocery;36;R04;A;PATH-2;PT-2;Name-2;SORTED;',
+      'Chilled;12;L01;B;PATH-3;PT-3;Name-3;SORTED;',
     ].join('\n')
     const { headers, rows } = parseCSV(text)
     expect(serializeCSV(headers, rows)).toBe(text)
