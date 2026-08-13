@@ -1,6 +1,7 @@
 # Pickwalk Editor
 
 Browser editor for semicolon-delimited pickwalk CSV files.
+CSV columns: `Zone;X;Y;Z;Path;PT;Name;Sorted;Role`
 
 ## Capabilities
 
@@ -26,5 +27,3 @@ npm run dev
 ```sh
 npm test
 ```
-
-CSV columns: `Zone;X;Y;Z;Path;PT;Name;Sorted;Role`
