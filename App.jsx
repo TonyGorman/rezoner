@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { parseCSV, serializeCSV, moveRows, reverseByY, searchReplace } from './utils.js'
+import { parseCSV, serializeCSV, moveRows, reverseByY, searchReplace, convertZToAlpha } from './utils.js'
 import styles from './App.module.css'
 
 const ROW_HEIGHT = 24
@@ -236,6 +236,14 @@ export default function App() {
     }
   }
 
+  function handleAlphaZ() {
+    if (!rows.length) return
+    if (editingCell) {
+      applyCellEdit()
+    }
+    setRows(prevRows => convertZToAlpha(prevRows))
+  }
+
   function handleSave() {
     const csv = serializeCSV(headers, rows)
     const suggested = filename || 'pickwalk.csv'
@@ -299,6 +307,10 @@ export default function App() {
 
         <button onClick={handleReverseY} disabled={!hasSelection}>
           Reverse Y
+        </button>
+
+        <button onClick={handleAlphaZ} disabled={!rows.length}>
+          Alpha Z
         </button>
 
         <span className={styles.sep} />

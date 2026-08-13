@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCSV, serializeCSV, moveRows, reverseByY, searchReplace } from './utils.js'
+import { parseCSV, serializeCSV, moveRows, reverseByY, searchReplace, convertZToAlpha } from './utils.js'
 
 const HEADER = 'Zone;X;Y;Z;Path;PT;Name;Sorted;Role'
 const mkRow = (zone, x, y, z) => ({
@@ -125,5 +125,32 @@ describe('searchReplace', () => {
     const rows = [mkRow('Grocery', '36', 'R01', 'A'), mkRow('Grocery', '36', 'R02', 'A')]
     const result = searchReplace(rows, 'Grocery', 'Chilled')
     expect(result.every(r => r.fields[0] === 'Chilled')).toBe(true)
+  })
+})
+
+describe('convertZToAlpha', () => {
+  it('converts numeric Z values to alphabetic equivalents', () => {
+    const rows = [mkRow('G', '36', 'R01', '1'), mkRow('G', '36', 'R01', '2'), mkRow('G', '36', 'R01', '3')]
+    const result = convertZToAlpha(rows)
+    expect(result.map(r => r.fields[3])).toEqual(['A', 'B', 'C'])
+  })
+
+  it('converts 26 to Z and ignores numbers above 26', () => {
+    const rows = [mkRow('G', '36', 'R01', '26'), mkRow('G', '36', 'R01', '27'), mkRow('G', '36', 'R01', '52')]
+    const result = convertZToAlpha(rows)
+    expect(result.map(r => r.fields[3])).toEqual(['Z', '27', '52'])
+  })
+
+  it('leaves non-numeric Z values unchanged', () => {
+    const rows = [mkRow('G', '36', 'R01', 'A'), mkRow('G', '36', 'R01', ''), mkRow('G', '36', 'R01', 'R1')]
+    const result = convertZToAlpha(rows)
+    expect(result.map(r => r.fields[3])).toEqual(['A', '', 'R1'])
+  })
+
+  it('preserves row order', () => {
+    const rows = [mkRow('First', '36', 'R01', '2'), mkRow('Second', '36', 'R01', '1')]
+    const result = convertZToAlpha(rows)
+    expect(result.map(r => r.fields[0])).toEqual(['First', 'Second'])
+    expect(result.map(r => r.fields[3])).toEqual(['B', 'A'])
   })
 })

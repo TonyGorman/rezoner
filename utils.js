@@ -1,5 +1,6 @@
 // Y field is at column index 2: Zone;X;Y;Z;Path;PT;Name;Sorted;Role
 const Y_INDEX = 2
+const Z_INDEX = 3
 
 export function parseCSV(text) {
   // Blank lines are the only rows removed; all others kept in original order
@@ -55,4 +56,22 @@ export function searchReplace(rows, pattern, replacement) {
     ...row,
     fields: row.fields.map(f => f.replace(re, replacement)),
   }))
+}
+
+export function convertZToAlpha(rows) {
+  return rows.map(row => {
+    const z = row.fields[Z_INDEX]
+    const trimmed = z.trim()
+    if (!/^\d+$/.test(trimmed)) return row
+
+    const n = Number(trimmed)
+    if (n < 1 || n > 26) return row
+
+    const nextFields = [...row.fields]
+    nextFields[Z_INDEX] = String.fromCharCode(64 + n)
+    return {
+      ...row,
+      fields: nextFields,
+    }
+  })
 }
