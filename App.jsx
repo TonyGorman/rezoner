@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { parseCSV, serializeCSV, moveRows, reverseByY, searchReplace, convertZToAlpha } from './utils.js'
+import { parseCSV, serializeCSV, moveRows, deleteRows, reverseByY, searchReplace, convertZToAlpha } from './utils.js'
 import styles from './App.module.css'
 
 const ROW_HEIGHT = 24
@@ -144,6 +144,16 @@ export default function App() {
       ...reverseByY(rows.slice(start, end + 1)),
       ...rows.slice(end + 1),
     ])
+  }
+
+  function handleDelete() {
+    if (!hasSelection) return
+    const [start, end] = selectedRange
+    setRows(deleteRows(rows, start, end))
+    setSelectedRange(null)
+    setAnchorRow(null)
+    setEditingCell(null)
+    setEditingValue('')
   }
 
   function rowContainsText(row, text) {
@@ -310,6 +320,9 @@ export default function App() {
           </button>
           <button onClick={handleReverseY} disabled={!hasSelection}>
             Reverse Y
+          </button>
+          <button onClick={handleDelete} disabled={!hasSelection}>
+            Delete
           </button>
           <button onClick={handleAlphaZ} disabled={!rows.length}>
             Alpha Z

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseCSV, serializeCSV, moveRows, reverseByY, searchReplace, convertZToAlpha } from './utils.js'
+import { parseCSV, serializeCSV, moveRows, deleteRows, reverseByY, searchReplace, convertZToAlpha } from './utils.js'
 
 const HEADER = 'Zone;X;Y;Z;Path;PT;Name;Sorted;Role'
 const mkRow = (zone, x, y, z) => ({
@@ -207,6 +207,19 @@ describe('moveRows', () => {
 
   it('returns unchanged when target is inside the selection', () => {
     expect(vals(moveRows(rows, 1, 3, 2))).toEqual(['a', 'b', 'c', 'd', 'e'])
+  })
+})
+
+describe('deleteRows', () => {
+  const rows = ['a', 'b', 'c', 'd', 'e'].map(x => ({ fields: [x], malformed: false }))
+  const vals = result => result.map(row => row.fields[0])
+
+  it('deletes a selected block and preserves the surrounding order', () => {
+    expect(vals(deleteRows(rows, 1, 3))).toEqual(['a', 'e'])
+  })
+
+  it('deletes a single row', () => {
+    expect(vals(deleteRows(rows, 2, 2))).toEqual(['a', 'b', 'd', 'e'])
   })
 })
 

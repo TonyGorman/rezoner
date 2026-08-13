@@ -6,7 +6,7 @@ CSV columns: `Zone;X;Y;Z;Path;PT;Name;Sorted;Role`
 ## Capabilities
 
 - Open, edit, and save CSV files without reordering rows accidentally.
-- Select single rows or ranges, move them, and reverse selected rows by Y.
+- Select single rows or ranges, move them, delete them, and reverse selected rows by Y.
 - Double-click cells to edit them inline.
 - Find matching rows and replace text using a regular expression.
 - Convert numeric Z values to letters with `Alpha Z`.

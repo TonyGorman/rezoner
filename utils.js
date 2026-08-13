@@ -138,6 +138,10 @@ export function moveRows(rows, start, end, insertAfterIndex) {
   return [...without.slice(0, at), ...selected, ...without.slice(at)]
 }
 
+export function deleteRows(rows, start, end) {
+  return [...rows.slice(0, start), ...rows.slice(end + 1)]
+}
+
 export function reverseByY(rows) {
   const groups = []
   let current = null
