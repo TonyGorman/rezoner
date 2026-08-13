@@ -129,22 +129,22 @@ describe('searchReplace', () => {
 })
 
 describe('convertZToAlpha', () => {
-  it('converts numeric Z values to alphabetic equivalents', () => {
-    const rows = [mkRow('G', '36', 'R01', '1'), mkRow('G', '36', 'R01', '2'), mkRow('G', '36', 'R01', '3')]
+  it('converts 1-9 to A-I', () => {
+    const rows = [mkRow('G', '36', 'R01', '1'), mkRow('G', '36', 'R01', '2'), mkRow('G', '36', 'R01', '9')]
     const result = convertZToAlpha(rows)
-    expect(result.map(r => r.fields[3])).toEqual(['A', 'B', 'C'])
+    expect(result.map(r => r.fields[3])).toEqual(['A', 'B', 'I'])
   })
 
-  it('converts 26 to Z and ignores numbers above 26', () => {
-    const rows = [mkRow('G', '36', 'R01', '26'), mkRow('G', '36', 'R01', '27'), mkRow('G', '36', 'R01', '52')]
+  it('converts 0 to J', () => {
+    const rows = [mkRow('G', '36', 'R01', '0')]
     const result = convertZToAlpha(rows)
-    expect(result.map(r => r.fields[3])).toEqual(['Z', '27', '52'])
+    expect(result.map(r => r.fields[3])).toEqual(['J'])
   })
 
-  it('leaves non-numeric Z values unchanged', () => {
-    const rows = [mkRow('G', '36', 'R01', 'A'), mkRow('G', '36', 'R01', ''), mkRow('G', '36', 'R01', 'R1')]
+  it('ignores anything outside single-digit 0-9', () => {
+    const rows = [mkRow('G', '36', 'R01', '10'), mkRow('G', '36', 'R01', '-1'), mkRow('G', '36', 'R01', 'A')]
     const result = convertZToAlpha(rows)
-    expect(result.map(r => r.fields[3])).toEqual(['A', '', 'R1'])
+    expect(result.map(r => r.fields[3])).toEqual(['10', '-1', 'A'])
   })
 
   it('preserves row order', () => {

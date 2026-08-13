@@ -62,13 +62,13 @@ export function convertZToAlpha(rows) {
   return rows.map(row => {
     const z = row.fields[Z_INDEX]
     const trimmed = z.trim()
-    if (!/^\d+$/.test(trimmed)) return row
+    if (!/^[0-9]$/.test(trimmed)) return row
 
     const n = Number(trimmed)
-    if (n < 1 || n > 26) return row
+    if (n < 0 || n > 9) return row
 
     const nextFields = [...row.fields]
-    nextFields[Z_INDEX] = String.fromCharCode(64 + n)
+    nextFields[Z_INDEX] = n === 0 ? 'J' : String.fromCharCode(64 + n)
     return {
       ...row,
       fields: nextFields,
