@@ -7,7 +7,14 @@ export function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== '')
   if (lines.length === 0) return { headers: [], rows: [] }
   const headers = lines[0].split(';')
-  const rows = lines.slice(1).map(line => {
+  const seen = new Set()
+  const uniqueDataLines = []
+  for (const line of lines.slice(1)) {
+    if (seen.has(line)) continue
+    seen.add(line)
+    uniqueDataLines.push(line)
+  }
+  const rows = uniqueDataLines.map(line => {
     const fields = line.split(';')
     return { fields, malformed: fields.length !== headers.length }
   })

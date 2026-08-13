@@ -31,6 +31,32 @@ describe('parseCSV', () => {
     expect(headers).toEqual([])
     expect(rows).toEqual([])
   })
+
+  it('removes exact duplicate data lines during load', () => {
+    const text = [
+      HEADER,
+      'Grocery;36;R05;A;;;;SORTED;',
+      'Grocery;36;R05;A;;;;SORTED;',
+      'Chilled;12;L01;B;;;;SORTED;',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows).toHaveLength(2)
+    expect(rows[0].fields[0]).toBe('Grocery')
+    expect(rows[1].fields[0]).toBe('Chilled')
+  })
+
+  it('keeps non-exact lines and preserves first occurrence order', () => {
+    const text = [
+      HEADER,
+      'Grocery;36;R05;A;;;;SORTED;',
+      'Chilled;12;L01;B;;;;SORTED;',
+      'Grocery;36;R05;A;;;;SORTED;',
+      'Grocery;36;R05;A;;;;SORTED; ',
+    ].join('\n')
+    const { rows } = parseCSV(text)
+    expect(rows).toHaveLength(3)
+    expect(rows.map(r => r.fields[0])).toEqual(['Grocery', 'Chilled', 'Grocery'])
+  })
 })
 
 describe('serializeCSV', () => {
